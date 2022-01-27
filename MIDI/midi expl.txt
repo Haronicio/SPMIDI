@@ -1,0 +1,55 @@
+LOC    0: 4d 54 68 64 00 00 00 06 00 01 00 10 00 c0 4d 54  "MThd..........MT??"
+LOC   16: 72 6b 00 00 00 7c 00 ff 7f 03 00 00 41 00 ff 58  "rk...|......A..X??"
+LOC   32: 04 04 02 18 08 00 ff 51 03 0a 49 6d 00 ff 59 02  ".......Q..Im..Y.??"
+LOC   48: 00 00 00 ff 01 2a 43 6f 70 79 72 69 67 68 74 20  ".....*Copyright ??"
+LOC   64: 28 43 29 20 31 39 39 30 20 62 79 20 56 6f 79 65  "(C) 1990 by Voye??"
+LOC   80: 74 72 61 20 54 65 63 68 6e 6f 6c 6f 67 69 65 73  "tra Technologies??"
+LOC   96: 00 ff 01 2a 43 6f 70 79 72 69 67 68 74 20 28 43  "...*Copyright (C??"
+LOC  112: 29 20 31 39 39 31 20 62 79 20 56 6f 79 65 74 72  ") 1991 by Voyetr??"
+LOC  128: 61 20 54 65 63 68 6e 6f 6c 6f 67 69 65 73 00 ff  "a Technologies..??"
+LOC  144: 2f 00 4d 54 72 6b 00 00 09 61 00 ff 21 01 01 00  "/.MTrk...a..!...??"
+LOC  160: ff 03 14 50 69 61 6e 6f 20 54 72 65 62 6c 65 20  "...Piano Treble ??"
+LOC  176: 20 20 20 20 20 20 20 00 c1 02 00 b1 07 61 00 b1  "       ......a..??"
+LOC  192: 0a 7f 00 91 37 7f 60 39 7f 60 3c 7f 5e 41 7f 81  "....7.`9.`<.^A..??"
+LOC  208: 40 43 7f 10 81 41 40 81 30 91 41 7f 06 81 3c 40  "@C...A@.0.A...<@??"
+LOC  224: 0c 37 40 4e 91 37 7f 2e 81 39 40 32 91 39 7f 60  ".7@N.7...9@2.9.`??"
+LOC  240: 3c 7f 0c 81 41 40 04 43 40 50 91 43 7f 60 41 7f  "<...A@.C@P.C.`A.??"
+...
+4d 54 68 64     4-character chunk ID: "MThd"
+00 00 00 06     length of the header: 6 bytes
+00 01           file format:          format 1
+00 10           # of tracks:          16 tracks in this file
+00 c0           MSb=0, resolution per quarter note: 192 ticks per quarter note
+4d 54 72 6b     4-character chunk ID: "MTrk"
+00 00 00 7c     length of the track:  124 Bytes
+
+delta time    track event             Intepretation
+=========    ===========            =====================================
+00            ff 7f 03 00 00 41       meta event, (?) 3 bytes
+00                        ff 58 04 04 02 18 08    Time signature meta event, 4/4 meter?
+00            ff 51 03 0a 49 6d       Tempo meta event, 674157 msec/quarternote
+00            ff 59 02 00 00          Key signature meta event, C major
+00            ff 01 2a 43 6f ...      Copyright meta event?
+
+4d 54 72 6b     4-character chunk ID:     "MTrk"
+00 00 09 61     length of the chunk data: 2401 bytes
+
+delta time    track event     Interpretation
+=========        ===========        =====================================
+00            ff 21 01 01     meta event?
+00            ff 03 14 50 ... instrument name, 20 bytes, Piano Treble
+00            c1 02           Program change on channel 1, patch #2
+00            b1 07 61        Control change on channel 1, volume level 91
+                                                         (loud, 80 normal)
+00            b1 0a 7f        continuous controller(MIDI knob), max. postion(127)
+00            91 37 7f        Note on channel 1,note=55(G,octave3), vel=127(loud)
+60            39 7f           note=57, vel=127(loud) after 96/192 quarternote
+                                                           (A, octave3), running status without command
+60            3c 7f           note=60(C, octave4), vel=127 after eighth note
+5e            41 7f           note=65(F, octave4), vel=127 after 94/192 qnote
+8140          43 7f           note=67(G, octave4), vel=127 after 192/192 qnote
+10            81 41 40        Note off, note=65, vel=64(med.) after 16/192 qnote
+8130          91 41 7f        Note on, note=65, vel=127 after 176/192 quarternote
+06            81 3c 40        Note off, note=60, vel=64 after 6/192 quarternote
+0c            37 40                     note=55, vel=64, after 12/192 quarternote
+4e            91 37 7f        Note on,  note=55, vel=127, after 78/192 qnote

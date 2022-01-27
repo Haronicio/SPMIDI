@@ -1,0 +1,142 @@
+première interprétation : 7F = velocité (12 ème octet)
+
+hypothèse :     0x40 représente une impulsion (car toujours le nombre de note joué et suit 7F (vélocité) )
+                la longeur d'un pattern se trouve 7 Octets avant la fin du fichier  et précéde des octets à 0
+
+à trouvé :  le temps où est joué le pad, le numéro du pad joué(fait), la vélocité du pad joué(fait) la longueur d'une séquence (~)
+            durée de pression d'un pad
+
+sur internet il est écrit (sur l'info des pads) que le temps est stocké sur 4(*2) Octets
+
+contenue:
+
+PTN109
+PTN110
+
+    lenght 1 Quantize None BPM 80 level(metronome) 10
+    il y a que Lenght différent pour chaque pad
+
+    avec le pad A1 joué à t 1.1
+
+PTN111 lenght 2
+
+PTN113 lenght 1 1 pad A1 joué a chaque t (4 notes joué)
+PTN114 lenght 2 1 pad A1 joué a chaque t 1 (4 notes joué)
+
+
+PTN115 lenght 2 1 pad A1 joué a chaque t (8 notes joué)
+    test : je modifie la vélocité allant de 0x00 à 0x7F pour chaque pas pressé (dans l'ordre)
+    Confirmé : avant chaque @ on à la vélocité
+
+PTN117  lenght 1 A1 joué 2 fois de suite à t 1.1 puis à t 1.3
+        A2 joué à t 1.2 et à t 1.4
+        soit 5 pad joué
+
+
+PTN118  copie du PTN117 
+        test : je modifie le supposé taille du pattern à 3 au lieu de 1
+        Non Confirmé : ca n'a paschangé la longeur du pattern sur le SP pourtant j'ai l'impression que c'est bien ca 
+        (c'est juste quil n'y a pas de donné après donc lit pas plus que 1 ???)
+
+PTN119 copie du PTN118 mais avec un lenght à 3 sur le SP
+
+Le déclenchement d'un pad doit être précis pour pouvoir comparer des codes hexa, le SP a une fonction de quantisation
+pour pouvoir placer précisément des samples sur certain temps
+
+je lis dans le manuelle du SP qu'il y a une Résolution de 96 ticks pas par noire avec maximum 99 mesures
+96 * 4 = 384 le nombre de tick par mesure
+on 1 à 20 mesures par pas de 20 mesures, puis par pas de 4 jusqu'à 99 (important !)
+sachant qu'il y a 4 noire par mesure on a 96 * 4 * 99  = 38 016 samples maximum et 4 * 99 = 396 noire maximum 
+ce qui se code respectivement en hexa : 0x0000 à 0x9480 et 0x000 à 0x18C et 96 = 0x60
+hypothèse : le temps est codé maximum sur 6 hexas 4 hexas pour la noire et 2 hexas pour la résolution
+
+Qu’est-ce que la quantification (quantize) ?
+Lorsque vous appuyez sur des pads pour enregistrer
+des samples dans un motif, certaines imprécisions rythmiques sont pratiquement inévitables.
+ La quantification est une fonction qui corrige automatiquement ces
+imprécisions rythmiques à l’enregistrement.
+Une fois que vous avez spécifié un paramètre de quantification,votre performance est enregistrée sur des intervalles
+précis de noires, croches, doubles-croches, etc.
+
+S.8     Quantification à la croche avec la fonction « Shuffle » (aléatoire).
+S.16    Quantification à la double-croche avec la fonction « Shuffle ».
+4       Quantification à la noire.
+4.3     Quantification au triolet de noires.
+8       Quantification à la croche.
+8.3     Quantification au triolet de croches.
+16      Quantification à la double-croche.
+16.3    Quantification au triolet de doubles-croches.
+32      Quantification à la triple-croche.
+oFF     Pas de quantification. La mise en place de votre jeu sur les pads est enregistrée telle quelle.
+
+PTN112 lenght 1 avec QTZ 4 et le pad A1 pressé (précisément) à t 1.1
+PTN116 lenght 1 avec QTZ 4 et le pad A2 pressé (précisément) à t 1.1
+
+
+nombre de pad : 120 donc de 0x00 à 0x78
+
+hypothèse: la 4 ème valeur avant 0x40 est le numéro de pad pressé, j'ai l'impression que la ou
+
+
+le pad A1 serait le 2F le pad A2 serait 30 (de 2F à A6), donc le pad J12 serait A6 
+test : je remplace le 0x2F de PTN112 à 0xA7
+je me rend compte que effectivement le pad suivant c'est 0x30 et même
+B1 c'est 0x3B mais le pad J12 c'est 0x6A( et non A6) soit 0x2F + 59(nombre de pad de la banque A à E)
+hypothèse: les pad vont de 0x2F à 0x6A il y a un bit qui code si on est dans les 5 premières banque ou les 5 autres
+validé : il y a bien un bit après qui code le numéro de banque 0x2F00 c'est A1 0x2F01 c'est F1
+0x6A00 c'est E12 et 0x6A01 c'est J12
+
+
+PTN037 lenght 1 QTZ 4 pad J12 de t 1.1 à 1.2 exclu
+    test: je mets 0xFF au premier octet
+    comportement innattendu : le t 1.1 dure soit plus longtemps soit il passe de 1.2 à 1.1 avant de continuer
+    test changer les 3 octets suivant 0x40 (ceux du PTN039), le pattern dure le même temps que le PTN039
+PTN038 lenght 1 QTZ 4 pad J12 de t 1.1 à 1.3 exclu
+PTN039 lenght 1 QTZ 4 pad J12 de t 1.1 à 1.4 exclu
+PTN040 lenght 1 QTZ 4 pad J12 de t 1.1 à 1.1 exclu
+
+je créé un PTN041 copie du PTN037 où je teste différente valeur pour les 3 octets de durée
+    0X010000 : le pattren dure effectivement plus longtemps mais le t 1.4 est bien plus court
+
+hypothèse : les 3 octets code la durée dans le sens décroissant de longueur
+    ce sont les 2 derniers octets plutot , ce qui colle avec les 2 octes necessaire pour couvrire le nombre maximum de mesures
+
+
+le pad est préssé ne dépend pas que d'un timer ,il faut que je déclenche des pads à t 1.2 pour comparer
+
+J'ai trouvé sur un forum quelques réponses : merci a ModuLR qui a trouvé quelques infos utile
+https://sp-forums.com/viewtopic.php?f=3&t=6831&sid=930f10b861bfd10348e8f2d20a1f5249&start=15
+
+
+je suis persuadé que la valeur 0x80 est une valeur importante 
+pour le premier octet il a relevé quelques chose d'intéréssant : si on additionne chaque valeur avant 0x80 et la première,
+on obtient 0x180 soit 384 le nombre de tick par mesure
+il pense alors que ces valeurs sont le nombre de ticks avant la prochine note
+
+ici l'application d'un utilisateurs aillant réeussi à le hacker parfaitement https://drummachinefunk.com/bankrobber/
+
+un autre utilisateur denken24 à lui réussi  a décodé certaine ligne du sp 404 sx
+
+18 61 00 00 19 00 00 01
+|  |  |  |  |  |  |--|
+|  |  |  |  |  |  Length (Ticks, 2 Bytes)
+|  |  |  |  |  unknown
+|  |  |  |  Velocity (0 - 127)
+|  |  |  unknown
+|  |  Channel Offset (00=ABCDE, 01=FGHIJ)
+|  Pad (MIDI-Note, 47-106)
+Interval (Ticks)
+
+sur le même formum on peut trouver un programme encore plus poussé : https://www.youtube.com/watch?v=QtH-x6_ar1o
+on parle mêm de hack de la puce
+
+maintenant je suis (presque) sur les informations d'un pad sont codé sur 8 octets
+la fin d'un pattern est indiqué par un 0x8C au 2eme octets puis des octets de remplissage et enfin 8 octets avec le deuxième octets indiquant
+la longueur de la séquence
+
+
+FF 6A 01 00 7F 40 01 00
+45 80 00 00 00 00 00 00 
+3C 80 00 00 00 00 00 FF 
+00 8C 00 00 00 00 00 00 
+00 01 00 00 00 00 00 00

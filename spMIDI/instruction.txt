@@ -1,0 +1,87 @@
+le fichier test contient toutes les informations sur comment lire un pattern BIN du SP 404
+dans ../midi/ j'ai toutes les informations sur l'encodage d'un fichier MID 
+
+Je peux maintenant créé un programme qui transforme un BIN en MID et inversement
+
+1 - récupérer information du fichier BIN
+
+	Le mieux est de récupérer chaque information est le mettre sur une timeline, de cette timeline on déduirat les siganux MIDI
+
+	A - dabord la récupération de chaque note dans l'ordre (chaque 8 octets consécutifs) jusqu'au fameux 
+		00 8C 00 00 00 00 00 00 00 LL 00 00 00 00 00 00 où LL est l'octet de longueur 
+		Les notes sont dans une structure DD NN 0C 00 VV ll ll (en octet) où 
+		DD est le delta-time, NN le numéro de note(0x2F à 0x6A), 0C le numéro de bank/channel (0x00 pour channel 1, 0x01 pour channel 2),
+		VV la velocité (entre 0x00 et 0x7F) et ll ll la longeur de la note
+
+	B - on vérifie la formule suivante LL * 384 = somme(DD) sinon le pattern ne respecte pas le standard du SP 404 (4 noires/mesure, 96 ticks/noire)
+		peut être intégré une possibilité de faire comme bon nous semble
+
+2 - timeline du BIN
+	
+	Les notes aillant pour NN == 0x80 ne sont pas des notes joué, donc ignoré, mais leurs DD est important pour calculer la note suivante
+	De plus, c'est après avoir lu tous les DD que l'on sait quand la première note est joué
+
+	A - Je récupère T0, le temps à la quelle la première note est joué 
+		(T0 = LL * 384 - somme(DD)) plus simple -> si 1er note c'est 0x80 alors c'est le premier DD sinon c'est 0 dans les convention du SP 4O4
+
+	B - Je créé une structure d'évènement dans un tableau de queue à la manière de la table des signaux :
+		êtant donné qu'une note a un début puis une fin je l'insère comme ceci : 
+											début = somme(DD lu)
+											fin = début + ll ll
+											
+											j'insère début et fin(t) : 
+
+												je parcours la table jusu'au bouchon
+													si t < t_i
+														j'ai trouvé ma place dans le tableau
+													sinon
+														t = t - t_i
+												je décale toutes les valeurs en dessous pour insérer nouvelle valeur
+
+		cette algorithme permet d'insérer plusieurs évènement (note préssé puis relaché) avec des temps relatif consécutifs
+		(ajouté un bit pour note ON/OFF)
+		exemple :
+
+			5A 2F 00 00 7F 40 00 15 		
+			5D 30 00 00 7F 40 00 17 
+			39 2F 00 00 7F 40 00 11 
+			23 80 00 00 00 00 00 FF 
+			5A 30 00 00 7F 40 00 14 		
+			13 2F 00 00 7F 40 00 12 
+			00 8C 00 00 00 00 00 00 
+			00 01 00 00 00 00 00 00
+			
+							t	|	NN VV bit
+							/	|	/
+			
+			1er note à 00 et dure 0015 d : 00 f : 00 + 15 = 15
+
+							t	|	NN VV
+							00	|	2F 7F	1
+							15	|	2F 00	0
+							/	|	/
+
+			2eme note à 5A et dure 0017 d : 00 + 5A f : 5A + 17 = 71 ,5A - 15 = 45, 71 - 15 - 45 = 17
+
+							t	|	NN VV
+							00	|	2F 7F	1
+							15	|	2F 00	0
+							45	|	30 7F	1
+							17	|	30 00	0
+			3eme note à 5D et dure 0011 d : 00 + 5A + 5D = B7 f : B7 + 11 = C8, B7 - 15 -45 - 17 = 46, C8 - 15 - 45 - 17 - 46 = 11
+
+							t	|	NN VV
+							00	|	2F 7F	1
+							15	|	2F 00	0
+							45	|	30 7F	1
+							17	|	30 00	0
+							46	|	2F 7F	1
+							11	|	2F 00	0
+			
+
+			le suivant est à  0x80 donc ignoré
+			
+			4eme note à 39 + 23 et dure 14 d : 00 + 5A + 5D + 			
+ 
+	
+		
